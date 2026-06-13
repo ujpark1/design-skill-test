@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lumen — WITHOUT Emil 미적용</title>
+<style>
+  /* ============================================================
+     EMIL 미적용 버전 (흔한 안티패턴)
+     - transition: all + ease-in (느리게 느껴짐)
+     - 버튼 누름 피드백 없음
+     - 모달/드롭다운 scale(0)에서 등장, 350~500ms, origin center
+     - 토스트 keyframe (끊기면 처음부터 다시 시작)
+     - 툴팁 매번 0ms 즉시 등장(지연도 없고 모션도 없음)
+     - 카드 한꺼번에 등장, width 애니메이션
+     - hover 미디어쿼리/reduced-motion 가드 없음
+     ============================================================ */
+  :root {
+    --bg: #0b0d12; --panel: #14171f; --panel-2: #1b1f29; --border: #262b36;
+    --text: #e8eaf0; --muted: #9aa3b2; --accent: #6c8cff; --accent-2: #5a78f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { transition: background 200ms ease, color 200ms ease; }
+  body.light { --bg:#f5f6f8; --panel:#ffffff; --panel-2:#eef0f4; --border:#e1e4ea; --text:#15181f; --muted:#667085; --accent:#5a78f0; --accent-2:#4a66dd; }
+  body.light .tip { background:#15181f !important; color:#fff !important; }
+  body.light td code { background:#eef0f4 !important; }
+  .theme-btn { position: fixed; top: 14px; right: 16px; z-index: 80; background: var(--border); border:1px solid var(--border); color: var(--text); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; line-height:1; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 64px 24px 120px; }
+  .tag {
+    display: inline-block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent); background: rgba(108,140,255,.1); padding: 6px 12px;
+    border-radius: 999px; margin-bottom: 20px; border: 1px solid rgba(108,140,255,.2);
+  }
+  h1 { font-size: 44px; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 16px; }
+  .lead { color: var(--muted); font-size: 18px; max-width: 540px; margin-bottom: 40px; }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin: 56px 0 18px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  /* 버튼: transition: all + ease-in, 누름 피드백 없음 */
+  .btn {
+    font: inherit; font-weight: 600; font-size: 15px; cursor: pointer;
+    padding: 11px 20px; border-radius: 10px; border: 1px solid transparent;
+    background: var(--accent); color: #fff;
+    transition: all 400ms ease-in;
+    box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 2px 8px rgba(0,0,0,.3);
+  }
+  .btn:hover { background: var(--accent-2); }
+  .btn.secondary { background: var(--panel-2); border-color: var(--border); color: var(--text); }
+  .btn.secondary:hover { background: #232836; }
+
+  /* 카드: 한꺼번에 등장 + width 애니메이션 (layout 유발) */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; width: 0; overflow: hidden; opacity: 0;
+    animation: cardIn 600ms ease-in forwards;
+  }
+  .card h3 { font-size: 16px; margin-bottom: 6px; white-space: nowrap; }
+  .card p { color: var(--muted); font-size: 14px; }
+  @keyframes cardIn { to { width: 100%; opacity: 1; } }
+
+  /* 툴팁: 매번 0ms 즉시 등장, 모션/지연 없음 */
+  .tip-wrap { position: relative; display: inline-flex; }
+  .tip {
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    background: #f4f5f8; color: #14171f; font-size: 13px; font-weight: 500;
+    padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+    display: none;
+  }
+  .tip-wrap:hover .tip { display: block; }
+
+  /* 드롭다운: scale(0)에서 등장, origin center, ease-in 350ms */
+  .dd-wrap { position: relative; display: inline-block; }
+  .dd {
+    position: absolute; top: calc(100% + 8px); left: 0; min-width: 200px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 6px; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    transform-origin: center;
+    opacity: 0; transform: scale(0); pointer-events: none;
+    transition: all 350ms ease-in;
+  }
+  .dd.open { opacity: 1; transform: scale(1); pointer-events: auto; }
+  .dd-item { padding: 9px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  .dd-item:hover { background: var(--panel-2); }
+
+  /* 모달: scale(0)에서 등장, 500ms ease-in */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0);
+    display: grid; place-items: center; pointer-events: none; z-index: 50;
+    transition: all 500ms ease-in;
+  }
+  .overlay.open { background: rgba(0,0,0,.55); pointer-events: auto; }
+  .modal {
+    width: min(420px, 90vw); background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; transform-origin: center;
+    opacity: 0; transform: scale(0);
+    transition: all 500ms ease-in;
+  }
+  .overlay.open .modal { opacity: 1; transform: scale(1); }
+  .modal h2 { font-size: 22px; margin-bottom: 8px; }
+  .modal p { color: var(--muted); margin-bottom: 22px; }
+
+  /* 토스트: keyframe (빠르게 여러 번 누르면 처음부터 다시 시작) */
+  .toaster { position: fixed; bottom: 24px; right: 24px; display: flex;
+    flex-direction: column-reverse; gap: 10px; z-index: 60; }
+  .toast {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 14px 18px; border-radius: 12px; font-size: 14px; min-width: 240px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+    animation: slideIn 450ms ease-in;
+  }
+  @keyframes slideIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .toast .t-title { font-weight: 600; }
+  .toast .t-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  .badge { position: fixed; top: 16px; left: 16px; font-size: 12px; font-weight: 600;
+    background: #331a1a; color: #ff8b8b; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid #4d2020; z-index: 70; }
+
+  /* ===== 추가 10개 컴포넌트 (안티패턴) ===== */
+  .demo10 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .cell { background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; min-height: 120px; }
+  .cell .h { font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); margin-bottom: 16px; }
+
+  /* 1. 토글 — transition: all + ease-in, knob의 left를 애니메이트(layout), 누름 피드백 없음 */
+  .switch { width: 48px; height: 28px; border-radius: 999px; background: var(--border);
+    position: relative; cursor: pointer; border: 0; padding: 0;
+    transition: all 350ms ease-in; }
+  .switch.on { background: var(--accent); }
+  .switch .knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.4);
+    transition: all 350ms ease-in; }
+  .switch.on .knob { left: 23px; }
+
+  /* 2. 탭 — 인디케이터 transition: all 400ms ease-in (굼뜸) */
+  .tabs { position: relative; display: inline-flex; gap: 4px; }
+  .tabs .tab { padding: 8px 16px; font: inherit; font-size: 14px; font-weight: 600;
+    color: var(--muted); background: 0; border: 0; cursor: pointer; position: relative; z-index: 2; }
+  .tabs .tab.active { color: #fff; }
+  .tab-ind { position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: 8px;
+    z-index: 1; transition: all 400ms ease-in; }
+
+  /* 3. 아코디언 — max-height 큰 값 ease-in (지연/굼뜬 타이밍), chevron transition 없음 */
+  .acc { display: flex; flex-direction: column; gap: 8px; }
+  .acc-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .acc-head { padding: 12px 14px; cursor: pointer; font-weight: 600; font-size: 14px;
+    display: flex; justify-content: space-between; align-items: center; }
+  .acc-head .chev { color: var(--muted); }
+  .acc-item.open .chev { transform: rotate(180deg); }
+  .acc-body { max-height: 0; overflow: hidden; transition: max-height 400ms ease-in; }
+  .acc-item.open .acc-body { max-height: 400px; }
+  .acc-body .inner { padding: 0 14px 14px; color: var(--muted); font-size: 13px; }
+
+  /* 4. 세그먼트 — pill transition: all 350ms ease-in */
+  .seg { position: relative; display: inline-flex; background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+  .seg button { padding: 7px 16px; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--muted); background: 0; border: 0; cursor: pointer; position: relative; z-index: 2; }
+  .seg button.active { color: #fff; }
+  .seg-pill { position: absolute; top: 4px; bottom: 4px; background: var(--accent);
+    border-radius: 7px; z-index: 1; transition: all 350ms ease-in; }
+
+  /* 5. 홀드-투-딜리트 — 그냥 클릭 즉시 삭제(꾹 누르는 맥락/피드백 없음) */
+  .hold { border: 1px solid #4d2020; background: var(--panel-2); color: #ff8b8b;
+    font: inherit; font-weight: 600; font-size: 14px; padding: 11px 20px;
+    border-radius: 10px; cursor: pointer; transition: all 300ms ease-in; }
+
+  /* 6. 스피너 — 느리게 회전(1.4s ease-in-out) → 로딩이 더뎌 보임 */
+  .spin { width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid var(--border); border-top-color: var(--accent);
+    animation: spin 1.4s ease-in-out infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 7. 바텀 드로어 — transition: all 600ms ease-in */
+  .sheet-ov { position: fixed; inset: 0; background: rgba(0,0,0,0); z-index: 55; pointer-events: none;
+    transition: all 600ms ease-in; }
+  .sheet-ov.open { background: rgba(0,0,0,.5); pointer-events: auto; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; background: var(--panel);
+    border-radius: 18px 18px 0 0; border: 1px solid var(--border); border-bottom: 0;
+    padding: 24px; transform: translateY(100%); transition: all 600ms ease-in; }
+  .sheet-ov.open .sheet { transform: translateY(0); }
+  .sheet .grip { width: 40px; height: 4px; border-radius: 99px; background: var(--border);
+    margin: 0 auto 16px; }
+
+  /* 8. 복사 버튼 — 즉시 텍스트 교체(끊김) */
+  .copy .c-content { display: inline-block; }
+
+  /* 9. 좋아요 — scale(0)에서 튀어나옴, 팝/누름 피드백 없음 */
+  .like { font: inherit; font-size: 22px; background: 0; border: 0; cursor: pointer; line-height: 1; }
+  .like .heart { display: inline-block; filter: grayscale(1) opacity(.5);
+    transform: scale(1); transition: all 300ms ease-in; }
+  .like.liked .heart { filter: none; transform: scale(0); animation: jump 300ms ease-in forwards; }
+  @keyframes jump { from { transform: scale(0); } to { transform: scale(1); } }
+
+  /* 10. 스크롤 이미지 리빌 — scale(0)에서 등장(ease-in) */
+  .reveal { height: 90px; border-radius: 12px;
+    background: linear-gradient(120deg, #6c8cff, #b06cff 60%, #ff6cab);
+    transform: scale(0); transition: transform 600ms ease-in; }
+  .reveal.in { transform: scale(1); }
+</style>
+</head>
+<body>
+  <button id="themeBtn" class="theme-btn" title="테마 전환">🌙</button>
+  <span class="badge">✗ Emil 미적용</span>
+  <div class="wrap">
+    <span class="tag">Lumen Notes</span>
+    <h1>생각의 속도로<br/>적는 노트</h1>
+    <p class="lead">아래 컴포넌트를 직접 눌러보세요. 같은 화면이라도 모션의 디테일이 손맛을 바꿉니다.</p>
+
+    <div class="section-title">버튼 — 누름 피드백</div>
+    <div class="row">
+      <button class="btn" onclick="toast('저장됨', '변경사항이 동기화되었어요')">노트 저장</button>
+      <button class="btn secondary" onclick="toast('보관함 이동', '되돌리려면 Z')">보관</button>
+      <div class="tip-wrap">
+        <button class="btn secondary">⌘ 단축키</button>
+        <span class="tip">⌘K 로 어디서나 열기</span>
+      </div>
+      <div class="tip-wrap">
+        <button class="btn secondary">공유</button>
+        <span class="tip">링크 복사 · 만료 설정</span>
+      </div>
+    </div>
+
+    <div class="section-title">드롭다운 — 트리거에서 펼쳐짐</div>
+    <div class="dd-wrap">
+      <button class="btn secondary" id="ddBtn">정렬: 최근순 ▾</button>
+      <div class="dd" id="dd">
+        <div class="dd-item">최근 수정순</div>
+        <div class="dd-item">생성 날짜순</div>
+        <div class="dd-item">제목 (가나다)</div>
+        <div class="dd-item">즐겨찾기 우선</div>
+      </div>
+    </div>
+
+    <div class="section-title">모달</div>
+    <div class="row">
+      <button class="btn" id="openModal">새 노트 만들기</button>
+    </div>
+
+    <div class="section-title">카드 — 진입</div>
+    <div class="cards">
+      <div class="card"><h3>빠른 캡처</h3><p>⌘K 한 번이면 어디서든 메모.</p></div>
+      <div class="card"><h3>로컬 우선</h3><p>오프라인에서도 즉시 저장.</p></div>
+      <div class="card"><h3>되돌리기</h3><p>모든 동작은 안전하게 복구.</p></div>
+    </div>
+
+    <div class="section-title">컴포넌트 10종 — Emil 미적용</div>
+    <div class="demo10">
+      <div class="cell"><div class="h">1 · 토글 스위치</div>
+        <button class="switch" id="sw"><span class="knob"></span></button></div>
+
+      <div class="cell"><div class="h">2 · 탭</div>
+        <div class="tabs" id="tabs"><span class="tab-ind"></span>
+          <button class="tab active">전체</button><button class="tab">즐겨찾기</button><button class="tab">보관함</button></div></div>
+
+      <div class="cell"><div class="h">3 · 아코디언</div>
+        <div class="acc" id="acc">
+          <div class="acc-item open"><div class="acc-head">단축키 <span class="chev">▾</span></div>
+            <div class="acc-body"><div class="inner">⌘K 빠른 열기, ⌘S 저장, Z 되돌리기.</div></div></div>
+          <div class="acc-item"><div class="acc-head">동기화 <span class="chev">▾</span></div>
+            <div class="acc-body"><div class="inner">모든 기기에서 실시간으로 반영됩니다.</div></div></div>
+        </div></div>
+
+      <div class="cell"><div class="h">4 · 세그먼트</div>
+        <div class="seg" id="seg"><span class="seg-pill"></span>
+          <button class="active">일</button><button>주</button><button>월</button></div></div>
+
+      <div class="cell"><div class="h">5 · 홀드-투-딜리트 (꾹 누르기)</div>
+        <button class="hold" id="hold">길게 눌러 삭제</button></div>
+
+      <div class="cell"><div class="h">6 · 스피너 (느린 체감)</div>
+        <div class="spin"></div></div>
+
+      <div class="cell"><div class="h">7 · 바텀 드로어</div>
+        <button class="btn secondary" id="openSheet">시트 열기</button></div>
+
+      <div class="cell"><div class="h">8 · 복사 버튼</div>
+        <button class="btn secondary copy" id="copy"><span class="c-content">링크 복사</span></button></div>
+
+      <div class="cell"><div class="h">9 · 좋아요</div>
+        <button class="like" id="like"><span class="heart">❤️</span></button></div>
+
+      <div class="cell"><div class="h">10 · 스크롤 이미지 리빌</div>
+        <div class="reveal" id="reveal"></div></div>
+    </div>
+  </div>
+
+  <div class="sheet-ov" id="sheetOv">
+    <div class="sheet">
+      <div class="grip"></div>
+      <h2 style="font-size:20px;margin-bottom:8px">옵션</h2>
+      <p style="color:var(--muted);margin-bottom:18px">아래에서 슬라이드로 올라옵니다.</p>
+      <button class="btn" id="closeSheet" style="width:100%">닫기</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2>새 노트</h2>
+      <p>제목 없이도 바로 쓰기 시작할 수 있어요.</p>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn secondary" id="cancelModal">취소</button>
+        <button class="btn" id="confirmModal">만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toaster" id="toaster"></div>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  document.getElementById('openModal').onclick = () => overlay.classList.add('open');
+  const closeModal = () => overlay.classList.remove('open');
+  document.getElementById('cancelModal').onclick = closeModal;
+  document.getElementById('confirmModal').onclick = () => { closeModal(); toast('노트 생성됨', '지금 바로 작성하세요'); };
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+  const dd = document.getElementById('dd');
+  document.getElementById('ddBtn').onclick = (e) => { e.stopPropagation(); dd.classList.toggle('open'); };
+  document.querySelectorAll('.dd-item').forEach(i => i.onclick = () => {
+    document.getElementById('ddBtn').textContent = '정렬: ' + i.textContent + ' ▾';
+    dd.classList.remove('open');
+  });
+  document.addEventListener('click', () => dd.classList.remove('open'));
+
+  // 토스트: keyframe 재생 — 빠르게 누르면 매번 처음부터
+  const toaster = document.getElementById('toaster');
+  function toast(title, sub) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = '<div class="t-title">'+title+'</div><div class="t-sub">'+sub+'</div>';
+    toaster.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+  }
+
+  /* ===== 추가 10개 컴포넌트 (안티패턴) ===== */
+  // 1. 토글
+  document.getElementById('sw').onclick = function(){ this.classList.toggle('on'); };
+
+  // 2/4. 슬라이딩 인디케이터
+  function slider(rootId, indSel, btnSel){
+    const root = document.getElementById(rootId);
+    const ind = root.querySelector(indSel);
+    const btns = root.querySelectorAll(btnSel);
+    function move(el){ ind.style.width = el.offsetWidth + 'px'; ind.style.transform = 'translateX(' + el.offsetLeft + 'px)'; }
+    btns.forEach(b => b.onclick = () => { btns.forEach(x=>x.classList.remove('active')); b.classList.add('active'); move(b); });
+    move(root.querySelector(btnSel + '.active'));
+  }
+  slider('tabs', '.tab-ind', '.tab');
+  slider('seg', '.seg-pill', 'button');
+
+  // 3. 아코디언
+  document.querySelectorAll('#acc .acc-head').forEach(h => h.onclick = () => {
+    const item = h.parentElement, wasOpen = item.classList.contains('open');
+    document.querySelectorAll('#acc .acc-item').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  });
+
+  // 5. 홀드-투-딜리트 → 그냥 즉시 삭제
+  document.getElementById('hold').onclick = () => toast('삭제됨', '되돌리려면 Z');
+
+  // 7. 드로어
+  const sheetOv = document.getElementById('sheetOv');
+  document.getElementById('openSheet').onclick = () => sheetOv.classList.add('open');
+  document.getElementById('closeSheet').onclick = () => sheetOv.classList.remove('open');
+  sheetOv.onclick = (e) => { if (e.target === sheetOv) sheetOv.classList.remove('open'); };
+
+  // 8. 복사 → 즉시 교체
+  const copy = document.getElementById('copy');
+  copy.onclick = () => {
+    const c = copy.querySelector('.c-content');
+    c.textContent = '복사됨 ✓';
+    setTimeout(() => c.textContent = '링크 복사', 1600);
+  };
+
+  // 9. 좋아요
+  document.getElementById('like').onclick = function(){ this.classList.toggle('liked'); };
+
+  // 10. 스크롤 리빌
+  new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); } });
+  }, { threshold: 0.4 }).observe(document.getElementById('reveal'));
+  // ===== 테마 (라이트/다크) =====
+  (function(){
+    function apply(t){ document.body.classList.toggle('light', t==='light'); var b=document.getElementById('themeBtn'); if(b) b.textContent = t==='light'?'☀️':'🌙'; }
+    var p=new URLSearchParams(location.search); if(p.get('theme')) apply(p.get('theme'));
+    window.addEventListener('message', function(e){ if(e.data&&e.data.theme) apply(e.data.theme); });
+    if(window.self!==window.top){ var bb=document.getElementById('themeBtn'); if(bb) bb.style.display='none'; }
+    var btn=document.getElementById('themeBtn'); if(btn) btn.onclick=function(){ apply(document.body.classList.contains('light')?'dark':'light'); };
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Emil 적용 vs 미적용 — 나란히 비교</title>
+<style>
+  :root { --bg:#06070a; --text:#e8eaf0; --muted:#9aa3b2; --border:#262b36; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { transition: background 200ms ease, color 200ms ease; }
+  body.light { --bg:#f5f6f8; --panel:#ffffff; --panel-2:#eef0f4; --border:#e1e4ea; --text:#15181f; --muted:#667085; --accent:#5a78f0; --accent-2:#4a66dd; }
+  body.light .tip { background:#15181f !important; color:#fff !important; }
+  body.light td code { background:#eef0f4 !important; }
+  .theme-btn { position: fixed; top: 14px; right: 16px; z-index: 80; background: var(--border); border:1px solid var(--border); color: var(--text); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; line-height:1; }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, sans-serif;
+    background: var(--bg); color: var(--text); }
+  header { padding: 22px 28px; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 20px; letter-spacing: -0.01em; }
+  header p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--border);
+    height: calc(100vh - 200px); min-height: 560px; }
+  .pane { background: var(--bg); display: flex; flex-direction: column; }
+  .pane .label { padding: 10px 16px; font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .pane.none .label { color: #9aa3b2; }
+  .pane.bad .label { color: #ff8b8b; }
+  .pane.good .label { color: #5fdd8a; }
+  iframe { flex: 1; width: 100%; border: 0; }
+  .none-c { color: #9aa3b2; }
+  .notes { padding: 20px 28px 40px; border-top: 1px solid var(--border); }
+  .notes h2 { font-size: 15px; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  td code { background: #14171f; padding: 2px 6px; border-radius: 5px; font-size: 12px; }
+  .bad-c { color: #ff8b8b; } .good-c { color: #5fdd8a; }
+  @media (max-width: 760px){ .grid{ grid-template-columns: 1fr; height:auto } iframe{height:620px} }
+</style>
+</head>
+<body>
+  <header>
+  <button id="themeBtn" class="theme-btn" title="테마 전환">🌙</button>
+    <h1>Lumen — Emil Design Engineering 적용 비교</h1>
+    <p>같은 마크업·같은 비주얼. 모션만 다릅니다. 세 패널의 버튼·드롭다운·모달·토스트·툴팁을 직접 눌러보며 ① 모션이 아예 없을 때 → ② 모션은 있지만 잘못됐을 때 → ③ 제대로 다듬었을 때 의 차이를 비교하세요.</p>
+  </header>
+  <div class="grid">
+    <div class="pane none">
+      <div class="label">① 애니메이션 없음 (without-none.html)</div>
+      <iframe src="without-none.html"></iframe>
+    </div>
+    <div class="pane bad">
+      <div class="label">② 잘못된 애니메이션 (without.html)</div>
+      <iframe src="without.html"></iframe>
+    </div>
+    <div class="pane good">
+      <div class="label">③ Emil 적용 (with.html)</div>
+      <iframe src="with.html"></iframe>
+    </div>
+  </div>
+  <div class="notes">
+    <h2>무엇이 달라졌나 (Emil 체크리스트 기준)</h2>
+    <table>
+      <tr><th>요소</th><th class="none-c">① 없음</th><th class="bad-c">② 잘못된 모션</th><th class="good-c">③ Emil 적용</th><th>이유</th></tr>
+      <tr><td>버튼</td><td>즉시, 피드백 없음</td><td><code>transition: all 400ms ease-in</code>, 누름 피드백 없음</td><td><code>transform 160ms ease-out</code> + <code>:active scale(0.97)</code></td><td>누르는 순간 반응 = "듣고 있다"는 신호. ease-in은 느리게 느껴짐</td></tr>
+      <tr><td>모달</td><td>툭 나타남(전환 0)</td><td><code>scale(0)</code> → 500ms ease-in</td><td><code>scale(0.95)</code> + opacity, 220ms ease-out</td><td>무에서 튀어나오지 않음. 300ms 이하로 경쾌하게</td></tr>
+      <tr><td>드롭다운</td><td>툭 나타남</td><td><code>scale(0)</code>, origin center, 350ms ease-in</td><td>origin <code>top-left</code>(트리거 기준), 180ms ease-out</td><td>트리거에서 펼쳐져야 공간감이 맞음</td></tr>
+      <tr><td>토스트</td><td>툭 쌓임</td><td><code>@keyframes</code> — 연타 시 매번 처음부터</td><td><code>transition</code> — 끊겨도 부드럽게 retarget·스택</td><td>빠르게 추가되는 UI엔 transition이 부드러움</td></tr>
+      <tr><td>툴팁</td><td>즉시 표시</td><td>매번 즉시 표시(지연·모션 없음)</td><td>첫 hover 지연 후 등장, 이후 인접 툴팁은 instant</td><td>오발동 방지 + 두 번째부터는 빠르게 느껴짐</td></tr>
+      <tr><td>카드</td><td>그냥 떠 있음</td><td>한꺼번에, <code>width</code> 애니메이션(layout)</td><td><code>transform/opacity</code> stagger 50ms</td><td>GPU에서만 처리 + 자연스러운 캐스케이드</td></tr>
+      <tr><td>접근성</td><td>모션 0 (안전하지만 밋밋)</td><td>가드 없음</td><td><code>prefers-reduced-motion</code> · <code>@media (hover:hover)</code></td><td>멀미 방지 + 터치 hover 오발동 방지</td></tr>
+    </table>
+
+    <h2 style="margin:28px 0 14px">추가 컴포넌트 10종</h2>
+    <table>
+      <tr><th>컴포넌트</th><th class="none-c">① 없음</th><th class="bad-c">② 잘못된 모션</th><th class="good-c">③ Emil 적용</th><th>이유</th></tr>
+      <tr><td>1 토글</td><td>knob 즉시 점프</td><td><code>left</code> 이동 + <code>all</code> ease-in</td><td><code>transform</code> 이동 + 누르면 squish</td><td>left는 layout 유발, transform은 GPU</td></tr>
+      <tr><td>2 탭</td><td>인디케이터 즉시 점프</td><td>인디케이터 <code>all 400ms ease-in</code></td><td><code>transform 250ms ease-out</code></td><td>ease-in은 굼뜨게 느껴짐</td></tr>
+      <tr><td>3 아코디언</td><td>툭 펼쳐짐</td><td><code>max-height: 400px</code> ease-in</td><td><code>grid-template-rows 0fr→1fr</code></td><td>max-height는 타이밍 부정확, grid-rows는 정확</td></tr>
+      <tr><td>4 세그먼트</td><td>pill 즉시 점프</td><td>pill <code>all 350ms ease-in</code></td><td>pill <code>transform 230ms ease-out</code></td><td>속성 명시 + 경쾌한 슬라이드</td></tr>
+      <tr><td>5 홀드-삭제</td><td>채움 즉시(전환 0)</td><td>클릭 즉시 삭제(맥락 없음)</td><td><code>clip-path</code> 1.6s linear 누름 / 220ms 해제</td><td>위험 동작은 의도적으로 느리게, 해제는 빠르게</td></tr>
+      <tr><td>6 스피너</td><td>정지(안 돎)</td><td>1.4s ease-in-out</td><td>0.6s linear</td><td>빠른 회전이 로딩을 빠르게 체감시킴</td></tr>
+      <tr><td>7 드로어</td><td>툭 나타남</td><td><code>all 600ms ease-in</code></td><td><code>translateY</code> + iOS 드로어 커브 420ms</td><td>전용 커브가 시트 손맛을 살림</td></tr>
+      <tr><td>8 복사</td><td>텍스트 즉시 교체</td><td>텍스트 즉시 교체(끊김)</td><td><code>blur(3px)</code>로 마스킹 후 교체</td><td>blur가 두 상태 겹침을 가려 매끄럽게</td></tr>
+      <tr><td>9 좋아요</td><td>색만 즉시 바뀜</td><td><code>scale(0)</code>에서 튐</td><td><code>scale(1.35)</code> overshoot 팝</td><td>무에서 안 나옴 + 스프링 손맛</td></tr>
+      <tr><td>10 이미지 리빌</td><td>그냥 보임(전환 0)</td><td><code>scale(0)</code> ease-in</td><td><code>clip-path inset</code> 아래→위 ease-out</td><td>clip-path는 자르며 드러나 자연스러움</td></tr>
+    </table>
+  </div>
+  <script>
+  (function(){
+    var theme='dark';
+    function sync(){ document.querySelectorAll('iframe').forEach(function(f){ try{ f.contentWindow.postMessage({theme:theme}, '*'); }catch(e){} }); }
+    function apply(){ document.body.classList.toggle('light', theme==='light'); document.getElementById('themeBtn').textContent = theme==='light'?'☀️':'🌙'; sync(); }
+    document.getElementById('themeBtn').onclick=function(){ theme = theme==='light'?'dark':'light'; apply(); };
+    document.querySelectorAll('iframe').forEach(function(f){ f.addEventListener('load', sync); });
+  })();
+  </script>
+</body>
+</html>
