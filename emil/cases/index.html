@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Emil 모션 케이스 가이드 — Airbnb 디자인</title>
+<meta name="description" content="Emil Kowalski의 디자인 엔지니어링 스킬을 케이스별로 정리한 인터랙티브 가이드. 언제·어떻게 쓰는지와 실제 예시." />
+<style>
+  /* ============ Airbnb Design System tokens ============ */
+  :root {
+    --rausch:#ff385c; --rausch-active:#e00b41; --rausch-soft:#ffd1da;
+    --error:#c13515;
+    --canvas:#ffffff; --soft:#f7f7f7; --strong:#f2f2f2; --card:#ffffff;
+    --ink:#222222; --body:#3f3f3f; --muted:#6a6a6a; --muted-soft:#929292;
+    --on-primary:#ffffff;
+    --hairline:#dddddd; --hairline-soft:#ebebeb; --border-strong:#c1c1c1;
+    --shadow: rgba(0,0,0,.02) 0 0 0 1px, rgba(0,0,0,.04) 0 2px 6px 0, rgba(0,0,0,.1) 0 4px 8px 0;
+    --radius-card:14px; --radius-sm:8px; --radius-pill:9999px;
+    --font: "Airbnb Cereal VF", Circular, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Apple SD Gothic Neo", Pretendard, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --cx-speed:1;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+  body.dark {
+    --canvas:#1a1a1a; --soft:#242424; --strong:#2b2b2b; --card:#202020;
+    --ink:#f7f7f7; --body:#dcdcdc; --muted:#a3a3a3; --muted-soft:#8a8a8a;
+    --hairline:#383838; --hairline-soft:#303030; --border-strong:#555;
+    --shadow: rgba(0,0,0,.3) 0 0 0 1px, rgba(0,0,0,.4) 0 4px 12px 0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font); background: var(--canvas); color: var(--ink);
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+    transition: background 200ms ease, color 200ms ease;
+  }
+  a { color: inherit; }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 56px 24px 120px; }
+
+  /* ---- typography ---- */
+  .tag { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+    letter-spacing:.02em; color:var(--rausch); background:rgba(255,56,92,.10);
+    padding:6px 12px; border-radius:var(--radius-pill); }
+  h1 { font-size:32px; line-height:1.15; font-weight:700; letter-spacing:-0.5px; margin:18px 0 12px; }
+  .lead { color:var(--body); font-size:18px; max-width:600px; }
+  .lead b { color:var(--ink); font-weight:600; }
+  .extlink { display:inline-flex; align-items:center; gap:6px; margin-top:14px;
+    font-size:14px; color:var(--rausch); text-decoration:none; font-weight:500; }
+  .extlink:hover { text-decoration:underline; }
+  .back { display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:500;
+    color:var(--muted); text-decoration:none; margin-bottom:8px; }
+  .back:hover { color:var(--ink); }
+
+  h2 { font-size:22px; font-weight:700; letter-spacing:-0.3px; margin-top:6px; }
+  .sec-n { font-size:13px; font-weight:700; color:var(--rausch); font-family:var(--mono); }
+  .sec-intro { color:var(--muted); font-size:15px; margin-top:6px; max-width:640px; }
+
+  /* ---- control bar ---- */
+  .controls { position:sticky; top:14px; z-index:50; margin-top:28px;
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;
+    background:color-mix(in srgb, var(--card) 86%, transparent); backdrop-filter:blur(10px);
+    border:1px solid var(--hairline); border-radius:var(--radius-card); padding:10px 14px;
+    box-shadow:var(--shadow); }
+  .ctl-left { display:flex; align-items:center; gap:10px; font-size:14px; }
+  .ctl-label { color:var(--body); }
+  .ctl-label .dim { color:var(--muted-soft); }
+
+  /* switch */
+  .switch { position:relative; width:42px; height:24px; flex:0 0 auto; cursor:pointer; }
+  .switch input { position:absolute; opacity:0; inset:0; cursor:pointer; }
+  .track { position:absolute; inset:0; background:var(--border-strong); border-radius:var(--radius-pill);
+    transition:background calc(180ms * var(--cx-speed)) var(--ease-out); }
+  .thumb { position:absolute; top:2px; left:2px; width:20px; height:20px; background:#fff; border-radius:50%;
+    transition:transform calc(180ms * var(--cx-speed)) var(--ease-out); box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .switch input:checked ~ .track { background:var(--rausch); }
+  .switch input:checked ~ .thumb { transform:translateX(18px); }
+
+  .icon-btn { width:40px; height:40px; border-radius:var(--radius-sm); border:1px solid var(--hairline);
+    background:var(--card); color:var(--ink); cursor:pointer; font-size:17px; line-height:1;
+    transition:transform calc(150ms * var(--cx-speed)) var(--ease-out), background 150ms ease; }
+  .icon-btn:active { transform:scale(.92); }
+
+  /* ---- TOC ---- */
+  nav.toc { display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }
+  nav.toc a { font-size:13px; padding:7px 13px; border-radius:var(--radius-pill);
+    border:1px solid var(--hairline); color:var(--body); text-decoration:none;
+    transition:all 150ms var(--ease-out); }
+  nav.toc a:hover { border-color:var(--ink); color:var(--ink); }
+
+  /* ---- sections ---- */
+  .sections { margin-top:48px; display:flex; flex-direction:column; gap:64px; }
+  section { scroll-margin-top:84px; }
+  .cases { margin-top:18px; display:flex; flex-direction:column; gap:16px; }
+
+  .case { background:var(--card); border:1px solid var(--hairline); border-radius:var(--radius-card);
+    padding:22px 22px 20px; }
+  .case-head { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .case-head h3 { font-size:20px; font-weight:600; letter-spacing:-0.18px; }
+  .demo-badge { font-size:11px; font-weight:700; color:var(--rausch); background:rgba(255,56,92,.10);
+    padding:3px 9px; border-radius:var(--radius-pill); }
+
+  .meta { margin-top:12px; display:flex; flex-direction:column; gap:8px; font-size:14.5px; }
+  .meta-row { display:flex; gap:10px; align-items:flex-start; }
+  .lbl { flex:0 0 auto; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px;
+    margin-top:1px; letter-spacing:.02em; }
+  .lbl.when { background:var(--strong); color:var(--body); }
+  .lbl.how  { background:rgba(255,56,92,.10); color:var(--rausch); }
+  .lbl.avoid{ background:rgba(193,53,21,.10); color:var(--error); }
+  .meta-row span { color:var(--body); }
+
+  pre { margin-top:14px; background:var(--strong); border:1px solid var(--hairline-soft);
+    border-radius:var(--radius-sm); padding:14px 16px; overflow-x:auto;
+    font-family:var(--mono); font-size:12.5px; line-height:1.6; color:var(--body); }
+  pre .c { color:var(--muted-soft); }
+
+  .demo { margin-top:16px; }
+  .stage { background:var(--soft); border:1px solid var(--hairline-soft); border-radius:var(--radius-sm);
+    min-height:120px; padding:20px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .stage.col { flex-direction:column; gap:12px; }
+  .replay { margin-top:12px; display:inline-flex; align-items:center; gap:6px;
+    background:var(--card); color:var(--ink); border:1px solid var(--hairline);
+    border-radius:var(--radius-pill); padding:7px 15px; font-size:13px; font-weight:500; cursor:pointer;
+    transition:transform calc(150ms * var(--cx-speed)) var(--ease-out), border-color 150ms ease; }
+  .replay:active { transform:scale(.96); }
+  .replay:hover { border-color:var(--ink); }
+  .demo-note { margin-top:8px; font-size:12.5px; color:var(--muted); }
+  .demo-note a { color:var(--rausch); }
+
+  /* buttons used inside demos */
+  .btn { font-family:var(--font); border:1px solid transparent; border-radius:var(--radius-sm);
+    padding:10px 18px; font-size:15px; font-weight:500; cursor:pointer; line-height:1;
+    background:var(--rausch); color:var(--on-primary); }
+  .btn.sec { background:var(--card); color:var(--ink); border-color:var(--ink); }
+  .btn.ghost { background:transparent; color:var(--ink); }
+  .btn:active { background:var(--rausch-active); }
+  .btn.sec:active, .btn.ghost:active { background:var(--strong); }
+  .cx-press { transition:transform calc(150ms * var(--cx-speed)) var(--ease-out); }
+  .cx-press:active { transform:scale(.96); }
+
+  /* tables */
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  table.bordered { border:1px solid var(--hairline); border-radius:var(--radius-sm); overflow:hidden; }
+  th, td { text-align:left; padding:11px 14px; border-bottom:1px solid var(--hairline-soft); vertical-align:top; }
+  thead th { color:var(--muted); font-weight:600; background:var(--soft); font-size:13px; }
+  tr:last-child td { border-bottom:0; }
+  td code, .meta code, .sec-intro code, .lead code, td .m { font-family:var(--mono); font-size:12.5px;
+    background:var(--strong); padding:2px 6px; border-radius:5px; }
+  ol.principles { padding-left:20px; display:flex; flex-direction:column; gap:10px; color:var(--body); font-size:14.5px; }
+  ol.principles b { color:var(--ink); }
+
+  /* ===================== demo-specific ===================== */
+  .ball { width:30px; height:30px; border-radius:50%; background:var(--rausch); flex:0 0 auto; }
+  .lane { width:100%; }
+  .lane .lab { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:5px; font-family:var(--mono); }
+  .runner { transform:translateX(0); }
+  .run .runner { transform:translateX(var(--travel,240px)); }
+  .r-in  { transition:transform calc(650ms * var(--cx-speed)) cubic-bezier(0.42,0,1,1); }
+  .r-out { transition:transform calc(650ms * var(--cx-speed)) var(--ease-out); }
+  .r-lin { transition:transform calc(650ms * var(--cx-speed)) linear; }
+
+  .pop { width:110px; height:78px; border-radius:var(--radius-card); background:var(--card);
+    border:1px solid var(--hairline); display:flex; align-items:center; justify-content:center; font-size:26px;
+    box-shadow:var(--shadow); }
+  .pop.bad  { opacity:0; transform:scale(0);
+    transition:transform calc(440ms * var(--cx-speed)) var(--ease-out), opacity calc(440ms * var(--cx-speed)) var(--ease-out); }
+  .pop.good { opacity:0; transform:scale(.95);
+    transition:transform calc(440ms * var(--cx-speed)) var(--ease-out), opacity calc(440ms * var(--cx-speed)) var(--ease-out); }
+  .run .pop { opacity:1; transform:scale(1); }
+  .pop-col { text-align:center; }
+  .pop-col .cap { margin-top:8px; font-size:12px; color:var(--muted); font-family:var(--mono); }
+
+  .enter-box { opacity:0; transform:translateY(16px);
+    transition:opacity calc(420ms * var(--cx-speed)) var(--ease-out), transform calc(420ms * var(--cx-speed)) var(--ease-out);
+    background:var(--card); border:1px solid var(--hairline); border-radius:var(--radius-sm);
+    padding:12px 16px; box-shadow:var(--shadow); }
+  .run .enter-box { opacity:1; transform:translateY(0); }
+  .enter-box .t { font-weight:600; font-size:14px; }
+  .enter-box .s { color:var(--muted); font-size:12px; }
+
+  .stagger { width:100%; max-width:300px; display:flex; flex-direction:column; gap:8px; }
+  .stagger > div { opacity:0; transform:translateY(10px);
+    background:var(--card); border:1px solid var(--hairline); border-radius:var(--radius-sm); padding:9px 13px; font-size:14px; }
+  .run.stagger > div { animation:fadeUp calc(360ms * var(--cx-speed)) var(--ease-out) forwards; }
+  .run.stagger > div:nth-child(1){animation-delay:calc(0ms * var(--cx-speed));}
+  .run.stagger > div:nth-child(2){animation-delay:calc(60ms * var(--cx-speed));}
+  .run.stagger > div:nth-child(3){animation-delay:calc(120ms * var(--cx-speed));}
+  .run.stagger > div:nth-child(4){animation-delay:calc(180ms * var(--cx-speed));}
+  .run.stagger > div:nth-child(5){animation-delay:calc(240ms * var(--cx-speed));}
+  @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+  .spring { width:56px; height:56px; border-radius:18px; background:var(--rausch);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:22px; }
+  .run .spring { animation:springMove calc(620ms * var(--cx-speed)) cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes springMove { from { transform:translateY(-44px); } to { transform:translateY(0); } }
+
+  .origin-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; }
+  .origin-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .origin-stage { position:relative; width:100%; height:108px; }
+  .origin-pop { position:absolute; left:50%; top:4px; transform:translateX(-50%) scale(.9); opacity:0;
+    width:170px; background:var(--card); border:1px solid var(--hairline); border-radius:var(--radius-sm);
+    padding:12px; box-shadow:var(--shadow); pointer-events:none;
+    transition:transform calc(180ms * var(--cx-speed)) var(--ease-out), opacity calc(180ms * var(--cx-speed)) var(--ease-out); }
+  .origin-pop.trigger { transform-origin:top center; }
+  .origin-pop.center  { transform-origin:center center; }
+  .origin-pop.open { opacity:1; transform:translateX(-50%) scale(1); }
+  .origin-pop .t { font-weight:600; font-size:14px; }
+  .origin-pop .s { color:var(--muted); font-size:12px; }
+
+  .flip-wrap { perspective:800px; }
+  .flip { position:relative; width:170px; height:108px; transform-style:preserve-3d; cursor:pointer;
+    transition:transform calc(550ms * var(--cx-speed)) var(--ease-in-out); }
+  .flip.flipped { transform:rotateY(180deg); }
+  .flip .face { position:absolute; inset:0; backface-visibility:hidden; border-radius:var(--radius-card);
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500; }
+  .flip .front { background:var(--rausch); color:#fff; }
+  .flip .back { background:var(--card); border:1px solid var(--hairline); color:var(--ink); transform:rotateY(180deg); }
+
+  .hold { position:relative; overflow:hidden; border:1px solid var(--hairline); border-radius:var(--radius-sm);
+    padding:11px 20px; font-size:14px; font-weight:600; color:var(--ink); background:var(--card);
+    cursor:pointer; user-select:none; -webkit-user-select:none; }
+  .hold .fill { position:absolute; inset:0; background:rgba(193,53,21,.85); clip-path:inset(0 100% 0 0);
+    transition:clip-path calc(200ms * var(--cx-speed)) var(--ease-out); }
+  .hold.holding .fill { clip-path:inset(0 0 0 0); transition:clip-path calc(1600ms * var(--cx-speed)) linear; }
+  .hold .txt { position:relative; }
+  .hold.holding .txt, .hold.done .txt { color:#fff; }
+
+  .compare { position:relative; height:128px; width:100%; border:1px solid var(--hairline);
+    border-radius:var(--radius-sm); overflow:hidden; }
+  .compare .layer { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:500; }
+  .compare .after  { background:rgba(34,160,90,.14); color:#1a7a44; }
+  .compare .before { background:rgba(255,56,92,.14); color:var(--rausch); clip-path:inset(0 var(--clip,50%) 0 0); }
+  body.dark .compare .after { color:#5fdd8a; }
+  .compare .handle { position:absolute; top:0; bottom:0; width:2px; background:var(--ink); left:50%; }
+  input[type=range] { width:100%; margin-top:12px; accent-color:var(--rausch); }
+
+  .swipe { width:270px; display:flex; align-items:center; gap:12px; background:var(--card);
+    border:1px solid var(--hairline); border-radius:var(--radius-card); padding:14px; box-shadow:var(--shadow);
+    touch-action:pan-y;
+    transition:transform calc(260ms * var(--cx-speed)) var(--ease-out), opacity calc(260ms * var(--cx-speed)) var(--ease-out); }
+  .swipe.dragging { transition:none; }
+  .swipe .ic { width:36px; height:36px; border-radius:50%; background:var(--strong); flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .swipe .t { font-weight:600; font-size:14px; }
+  .swipe .s { color:var(--muted); font-size:12px; }
+
+  .spinner { width:34px; height:34px; border-radius:50%; border:3px solid var(--hairline);
+    border-top-color:var(--rausch); animation:rot var(--spin,1s) linear infinite; }
+  @keyframes rot { to { transform:rotate(360deg); } }
+  .spin-col { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+
+  .blur-txt { transition:filter calc(200ms * var(--cx-speed)) ease, opacity calc(200ms * var(--cx-speed)) ease; }
+  .blur-txt.swapping { filter:blur(4px); opacity:.5; }
+
+  .rm-badge { font-size:12px; font-weight:700; padding:5px 11px; border-radius:var(--radius-pill);
+    background:var(--strong); color:var(--body); }
+  .rm-badge.on { background:rgba(193,53,21,.12); color:var(--error); }
+
+  .row-center { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
+  .row-around { display:flex; align-items:center; justify-content:space-around; width:100%; }
+  .tiny { font-size:12px; color:var(--muted); }
+
+  /* tooltip */
+  .tip-row { display:flex; gap:8px; justify-content:center; }
+  .tip-btn { width:42px; height:42px; border-radius:var(--radius-sm); border:1px solid var(--hairline);
+    background:var(--card); color:var(--ink); font-size:17px; cursor:pointer; }
+  #tipfloat { position:fixed; z-index:200; background:var(--ink); color:var(--canvas); font-size:12px;
+    padding:6px 10px; border-radius:6px; pointer-events:none; opacity:0; transform:scale(.96);
+    transition:opacity 125ms var(--ease-out), transform 125ms var(--ease-out); white-space:nowrap; }
+  #tipfloat.show { opacity:1; transform:scale(1); }
+  #tipfloat.instant { transition-duration:0ms; }
+
+  /* toasts */
+  #toasts { position:fixed; right:18px; bottom:18px; z-index:300; display:flex; flex-direction:column-reverse; gap:8px; }
+  .toast { background:var(--ink); color:var(--canvas); border-radius:var(--radius-sm); padding:11px 15px;
+    min-width:200px; box-shadow:0 8px 24px rgba(0,0,0,.18);
+    opacity:0; transform:translateY(12px);
+    transition:opacity calc(300ms * var(--cx-speed)) var(--ease-out), transform calc(300ms * var(--cx-speed)) var(--ease-out); }
+  .toast.in { opacity:1; transform:translateY(0); }
+  .toast .tt { font-weight:600; font-size:14px; }
+  .toast .ts { font-size:12px; opacity:.7; }
+  .toast.err { background:var(--error); }
+  .toast.ok  { background:#1a7a44; }
+
+  footer { margin-top:72px; padding-top:24px; border-top:1px solid var(--hairline);
+    color:var(--muted); font-size:14px; display:flex; flex-direction:column; gap:6px; }
+  footer b { color:var(--ink); }
+
+  @media (max-width:600px){
+    h1 { font-size:27px; }
+    .origin-grid { grid-template-columns:1fr; }
+    .wrap { padding:40px 18px 100px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .run .runner, .run.stagger > div, .run .spring {
+      animation:none !important; transition:opacity calc(200ms * var(--cx-speed)) ease !important; transform:none !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- 헤더 -->
+    <a class="back" href="/emil">← Emil 3-way 비교 데모</a>
+    <div>
+      <span class="tag">● Emil Kowalski · Design Engineering</span>
+    </div>
+    <h1>모션 케이스 가이드</h1>
+    <p class="lead">
+      <code>emil-design-eng</code> 스킬의 모든 섹션을 케이스별로 정리했습니다.
+      각 항목마다 <b>언제 쓰는지 · 어떻게 쓰는지</b>와 직접 만져보는 <b>실제 예시</b>를 함께 담았어요.
+    </p>
+    <a class="extlink" href="https://animations.dev/" target="_blank" rel="noreferrer">더 깊이 배우기 — animations.dev ↗</a>
+
+    <!-- 컨트롤 바 -->
+    <div class="controls">
+      <div class="ctl-left">
+        <label class="switch">
+          <input type="checkbox" id="slowmo" />
+          <span class="track"></span><span class="thumb"></span>
+        </label>
+        <span class="ctl-label">슬로모 4× <span class="dim">(디버깅 모드)</span></span>
+      </div>
+      <button class="icon-btn" id="themeBtn" title="테마 전환">🌙</button>
+    </div>
+
+    <!-- 목차 -->
+    <nav class="toc" id="toc"></nav>
+
+    <div class="sections">
+
+      <!-- 1 철학 -->
+      <section id="philosophy">
+        <span class="sec-n">01</span>
+        <h2>핵심 철학</h2>
+        <p class="sec-intro">기법보다 먼저 깔려 있는 태도. 모든 결정의 바탕입니다.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>취향은 타고나는 게 아니라 훈련된다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>무엇을 만들지 막막할 때, ‘되게’가 아니라 ‘느낌이 맞게’ 만들고 싶을 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>좋은 작업을 곁에 두고, 왜 좋은지 분해해 보고, 애니메이션을 리버스 엔지니어링하며 본다. 호기심이 곧 훈련.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>보이지 않는 디테일이 쌓인다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>‘아무도 눈치 못 챌 텐데’라며 디테일을 건너뛰고 싶을 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>기능이 ‘당연히 이래야지’대로 동작하면 사용자는 멈칫하지 않는다. 개별로는 안 보여도 합쳐지면 보인다 — 수천 개의 작은 목소리가 화음을 이루듯.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>아름다움은 레버리지다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>기능은 충분한데 차별점이 없을 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>사람은 기능이 아니라 전체 경험으로 도구를 고른다. 좋은 기본값과 좋은 모션은 진짜 차별점 — 소프트웨어에서 가장 저평가된 무기.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2 프레임워크 -->
+      <section id="framework">
+        <span class="sec-n">02</span>
+        <h2>애니메이션 의사결정 프레임워크</h2>
+        <p class="sec-intro">코드를 짜기 전, 이 순서대로 답하세요: ① 애니메이션할까? → ② 목적은? → ③ easing은? → ④ 속도는?</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>① 이걸 애니메이션해야 하나?</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>새 인터랙션을 만들 때 가장 먼저. ‘얼마나 자주 보게 되나?’를 묻습니다.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>자주 볼수록 모션을 줄이거나 없앤다. 키보드로 시작되는 동작(단축키·커맨드 팔레트)은 절대 애니메이션하지 않는다 — Raycast가 열고 닫을 때 애니메이션이 없는 이유.</span></div>
+            </div>
+            <div class="demo">
+              <table class="bordered">
+                <thead><tr><th>빈도</th><th>결정</th></tr></thead>
+                <tbody>
+                  <tr><td>하루 100회+ (단축키, 팔레트)</td><td><b>절대 금지</b></td></tr>
+                  <tr><td>하루 수십 회 (호버, 목록 이동)</td><td>제거하거나 대폭 축소</td></tr>
+                  <tr><td>가끔 (모달, 드로어, 토스트)</td><td>표준 애니메이션</td></tr>
+                  <tr><td>드묾·처음 (온보딩, 축하)</td><td>딜라이트 추가 OK</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>② 목적이 뭔가?</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>‘왜 애니메이션하지?’에 한 문장으로 답할 수 없다면 멈추세요.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>유효한 목적: 공간적 일관성(토스트가 같은 방향에서 들고 난다) · 상태 표시 · 설명 · 피드백(누르면 줄어듦) · 급격한 변화 방지. ‘멋있어서’인데 자주 본다면 → 하지 않는다.</span></div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>③ 어떤 easing?</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>요소가 들어오거나(enter) 나갈 때(exit) → ease-out. 화면 안 이동/모핑 → ease-in-out. 호버/색 변화 → ease. 등속(마키·프로그레스) → linear.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>기본 CSS easing은 약하다. 커스텀 커브를 쓴다. UI에 ease-in은 절대 금지 — 시작이 굼떠서, 사용자가 가장 집중해 보는 첫 순간을 잡아먹는다.</span></div>
+            </div>
+            <pre><span class="c">/* 강한 커스텀 커브 */</span>
+--ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); <span class="c">/* iOS 드로어 */</span></pre>
+            <div class="demo">
+              <div class="stage col" data-anim>
+                <div class="lane"><div class="lab"><span>ease-in</span><span>느리게 시작 → 굼떠 보임</span></div><div class="ball runner r-in"></div></div>
+                <div class="lane"><div class="lab"><span>ease-out (강한 커브)</span><span>즉시 반응</span></div><div class="ball runner r-out"></div></div>
+                <div class="lane"><div class="lab"><span>linear</span><span>기계적</span></div><div class="ball runner r-lin"></div></div>
+              </div>
+              <button class="replay">↻ 다시 재생</button>
+              <p class="demo-note">커브는 직접 만들지 말고 <a href="https://easing.dev/" target="_blank" rel="noreferrer">easing.dev</a> · <a href="https://easings.co/" target="_blank" rel="noreferrer">easings.co</a>에서 강한 변형을 고르세요.</p>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>④ 얼마나 빨라야 하나?</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>UI 모션은 300ms 미만. 180ms 드롭다운이 400ms보다 더 반응 좋게 느껴집니다.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>체감 성능: 같은 로딩이라도 빠르게 도는 스피너가 더 빨라 보인다. 속도는 ease가 증폭한다 — 200ms ease-out이 200ms ease-in보다 빠르게 느껴짐.</span></div>
+            </div>
+            <div class="demo">
+              <table class="bordered">
+                <thead><tr><th>요소</th><th>권장 지속</th></tr></thead>
+                <tbody>
+                  <tr><td>버튼 누름 피드백</td><td><span class="m">100–160ms</span></td></tr>
+                  <tr><td>툴팁, 작은 팝오버</td><td><span class="m">125–200ms</span></td></tr>
+                  <tr><td>드롭다운, 셀렉트</td><td><span class="m">150–250ms</span></td></tr>
+                  <tr><td>모달, 드로어</td><td><span class="m">200–500ms</span></td></tr>
+                  <tr><td>마케팅/설명</td><td>더 길어도 됨</td></tr>
+                </tbody>
+              </table>
+              <div class="stage" style="margin-top:14px">
+                <div class="row-around">
+                  <div class="spin-col"><div class="spinner" style="--spin:.6s"></div><span>0.6s · 빨라 보임</span></div>
+                  <div class="spin-col"><div class="spinner" style="--spin:1.6s"></div><span>1.6s · 느려 보임</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 스프링 -->
+      <section id="spring">
+        <span class="sec-n">03</span>
+        <h2>스프링 애니메이션</h2>
+        <p class="sec-intro">실제 물리를 흉내 내 더 자연스럽다. 고정 지속시간이 없고 파라미터로 정착합니다.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>언제 스프링을 쓰나</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>모멘텀이 있는 드래그 · ‘살아있는’ 느낌(다이내믹 아일랜드) · 중간에 끊길 수 있는 제스처 · 장식적 마우스 트래킹.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>Apple식 설정이 추론하기 쉽다. bounce는 0.1–0.3으로 작게, 대부분의 UI에선 bounce를 피하고 드래그-투-디스미스 같은 곳에만.</span></div>
+              <div class="meta-row"><span class="lbl avoid">피하기</span><span>은행 앱의 기능적 그래프처럼 의미가 있는 곳엔 차라리 무애니메이션이 낫다. 스프링은 장식일 때 빛난다.</span></div>
+            </div>
+            <pre><span class="c">// Apple식 (권장)</span>
+{ type: "spring", duration: 0.5, bounce: 0.2 }
+<span class="c">// 전통 물리 (더 세밀)</span>
+{ type: "spring", mass: 1, stiffness: 100, damping: 10 }</pre>
+            <div class="demo">
+              <div class="stage" data-anim><div class="spring">↓</div></div>
+              <button class="replay">↻ 다시 재생</button>
+              <p class="demo-note">위 데모는 CSS 오버슈트로 흉내 낸 것 — 실제 스프링은 Motion의 <span class="m">useSpring</span>으로 구현합니다.</p>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>끊겨도 속도를 유지한다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>사용자가 도중에 마음을 바꿀 수 있는 제스처.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>스프링은 중단 시 현재 속도를 유지하지만 CSS keyframe은 0에서 다시 시작한다. 펼친 항목을 클릭했다가 곧장 Esc를 누르면, 스프링은 현재 위치에서 부드럽게 되감긴다.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 컴포넌트 원칙 -->
+      <section id="components">
+        <span class="sec-n">04</span>
+        <h2>컴포넌트 제작 원칙</h2>
+        <p class="sec-intro">개별 컴포넌트를 만질 때 반복해서 쓰이는 핵심 규칙들.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>버튼은 눌리는 느낌이 나야 한다</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>누를 수 있는 모든 요소.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span><span class="m">:active</span>에 scale(0.95–0.98). 즉각적인 피드백이 ‘인터페이스가 듣고 있다’는 느낌을 준다.</span></div>
+            </div>
+            <pre>.button { transition: transform 160ms ease-out; }
+.button:active { transform: scale(0.97); }</pre>
+            <div class="demo">
+              <div class="row-center" style="margin-bottom:12px">
+                <label class="switch"><input type="checkbox" id="pressToggle" checked /><span class="track"></span><span class="thumb"></span></label>
+                <span class="tiny"><span class="m">:active scale(0.96)</span> 적용</span>
+              </div>
+              <div class="stage">
+                <div class="row-center">
+                  <button class="btn cx-press" id="pressBtn">눌러보세요</button>
+                  <span class="tiny" id="pressHint">손이 닿는 느낌</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>scale(0)에서 등장하지 마라</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>요소가 나타나는 모든 진입 애니메이션.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>현실의 무엇도 무에서 튀어나오지 않는다. scale(0.9) 이상 + opacity로 시작 — 바람 빠진 풍선도 형체는 있듯이.</span></div>
+            </div>
+            <div class="demo">
+              <div class="stage" data-anim>
+                <div class="row-around">
+                  <div class="pop-col"><div class="pop bad">👻</div><div class="cap">scale(0)</div></div>
+                  <div class="pop-col"><div class="pop good">🎈</div><div class="cap">scale(0.95)+opacity</div></div>
+                </div>
+              </div>
+              <button class="replay">↻ 다시 재생</button>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>팝오버는 origin-aware하게</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>트리거에 붙는 팝오버·드롭다운·툴팁.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>트리거에서 자라나야 한다. 기본 <span class="m">transform-origin: center</span>는 거의 모든 팝오버에서 틀렸다. 단, 모달은 예외 — 특정 트리거에 묶이지 않으니 center 유지.</span></div>
+            </div>
+            <pre><span class="c">/* Radix */</span> transform-origin: var(--radix-popover-content-transform-origin);
+<span class="c">/* Base UI */</span> transform-origin: var(--transform-origin);</pre>
+            <div class="demo">
+              <div class="stage">
+                <div class="origin-grid">
+                  <div class="origin-col">
+                    <button class="btn sec cx-press" data-origin="t">트리거 기준 (옳음)</button>
+                    <div class="origin-stage"><div class="origin-pop trigger" id="origin-t"><div class="t">정렬</div><div class="s">버튼에서 자라남</div></div></div>
+                  </div>
+                  <div class="origin-col">
+                    <button class="btn sec cx-press" data-origin="c">중앙 기준 (어색)</button>
+                    <div class="origin-stage"><div class="origin-pop center" id="origin-c"><div class="t">정렬</div><div class="s">허공에서 부풀어 오름</div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>툴팁: 두 번째부터는 지연 없이</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>툴바처럼 툴팁이 모여 있는 곳.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>오작동 방지를 위해 첫 툴팁은 지연 후 등장. 하지만 하나가 열린 뒤 옆으로 옮기면 지연·애니메이션 없이 즉시 — 툴바 전체가 빨라 보인다.</span></div>
+            </div>
+            <div class="demo">
+              <div class="stage">
+                <div class="tip-row">
+                  <button class="tip-btn" data-tip="⌘K 빠른 열기">⌘</button>
+                  <button class="tip-btn" data-tip="링크 공유">↗</button>
+                  <button class="tip-btn" data-tip="알림">🔔</button>
+                  <button class="tip-btn" data-tip="저장 ⌘S">💾</button>
+                </div>
+              </div>
+              <p class="demo-note">하나에 올린 뒤 옆 버튼으로 빠르게 옮겨보세요 — 지연 없이 즉시 뜹니다.</p>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>동적 UI엔 keyframe보다 transition</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>빠르게 반복 트리거되는 인터랙션(토스트 추가, 상태 토글).</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>transition은 도중에 가로채 새 목표로 재조준되지만 keyframe은 0에서 재시작한다. 아래 토스트를 연타해 보세요 — 부드럽게 스택됩니다.</span></div>
+            </div>
+            <div class="demo">
+              <div class="stage">
+                <div class="row-center">
+                  <button class="btn cx-press" data-toast="ok|저장됨|동기화 완료">💾 저장</button>
+                  <button class="btn sec cx-press" data-toast="|보관함으로 이동|되돌리려면 Z">🗃 보관</button>
+                  <button class="btn cx-press" style="background:var(--error)" data-toast="err|삭제됨|복구 가능">🗑 삭제</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>블러로 어색한 전환을 가린다</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>크로스페이드가 easing·duration을 바꿔도 어색할 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>전환 중 <span class="m">filter: blur(2–4px)</span>. 블러가 두 상태를 섞어, 겹친 두 객체가 아니라 하나의 변형으로 속인다. Safari에서 비싸니 20px 미만.</span></div>
+            </div>
+            <div class="demo">
+              <div class="stage">
+                <div class="row-center">
+                  <button class="btn cx-press" id="blurBtn"><span class="blur-txt" id="blurTxt">저장</span></button>
+                  <span class="tiny">클릭 → 내용 교체를 블러로 가림</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head"><h3>진입 애니메이션 (@starting-style)</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>JS 없이 요소 진입을 애니메이션하고 싶을 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>React의 <span class="m">useEffect → mounted:true</span> 패턴을 대체. 브라우저 지원이 되면 <span class="m">@starting-style</span>, 아니면 data-mounted 폴백.</span></div>
+            </div>
+            <pre>.toast {
+  opacity: 1; transform: translateY(0);
+  transition: opacity 400ms ease, transform 400ms ease;
+  @starting-style { opacity: 0; transform: translateY(100%); }
+}</pre>
+            <div class="demo">
+              <div class="stage" data-anim><div class="enter-box"><div class="t">저장됨</div><div class="s">진입 시 아래에서 부드럽게 올라옴</div></div></div>
+              <button class="replay">↻ 다시 재생</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5 Transform -->
+      <section id="transform">
+        <span class="sec-n">05</span>
+        <h2>CSS Transform 마스터리</h2>
+        <p class="sec-intro">transform을 제대로 쓰면 JS 없이도 멀리 간다.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>translateY(%)는 자기 크기 기준</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>높이가 가변인 드로어/토스트를 화면 밖으로 숨길 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span><span class="m">translateY(100%)</span>는 실제 픽셀과 무관하게 ‘자기 높이만큼’ 이동. Sonner가 토스트를, Vaul이 드로어를 숨기는 방식. 하드코딩 px보다 안전.</span></div>
+            </div>
+            <pre>.drawer-hidden { transform: translateY(100%); }
+.toast-enter   { transform: translateY(-100%); }</pre>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>scale()은 자식까지 같이 키운다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>버튼을 누를 때 scale.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>width/height와 달리 scale은 폰트·아이콘·내용까지 비례해 함께 키운다. 버그가 아니라 기능 — 누름 피드백이 통째로 자연스럽다.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>3D 변형으로 깊이를</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>코인 플립, 궤도 회전, 깊이감.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span><span class="m">rotateY</span> + <span class="m">transform-style: preserve-3d</span> + <span class="m">backface-visibility</span>로 JS 없이 진짜 3D. 아래 카드를 클릭해 뒤집어 보세요.</span></div>
+            </div>
+            <div class="demo">
+              <div class="stage">
+                <div class="flip-wrap"><div class="flip" id="flip">
+                  <div class="face front">앞면 (클릭)</div>
+                  <div class="face back">뒷면 🎉</div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>transform-origin을 트리거에 맞춰라</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>origin-aware 인터랙션 전반.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>모든 요소엔 변형이 실행되는 기준점이 있고 기본은 center. 트리거가 있는 위치로 옮기면 자연스럽다.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6 clip-path -->
+      <section id="clip">
+        <span class="sec-n">06</span>
+        <h2>clip-path 애니메이션</h2>
+        <p class="sec-intro">clip-path는 도형용이 아니라, CSS에서 가장 강력한 애니메이션 도구 중 하나입니다.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>inset 기초</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>요소를 한쪽에서부터 드러내거나 가릴 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span><span class="m">inset(top right bottom left)</span> — 각 값이 그 변에서 안쪽으로 ‘파먹는다’. transition으로 부드럽게 reveal.</span></div>
+            </div>
+            <pre>.hidden  { clip-path: inset(0 100% 0 0); } <span class="c">/* 오른쪽에서 완전히 가림 */</span>
+.visible { clip-path: inset(0 0 0 0);   } <span class="c">/* 전부 보임 */</span></pre>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>탭의 완벽한 색 전환</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>활성 탭과 비활성 탭의 글자색이 다를 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>탭 목록을 복제해 사본을 ‘활성’ 스타일로. 활성 탭만 보이도록 clip하고 탭 변경 시 clip을 애니메이션. 개별 색 전환 타이밍으론 못 내는 매끈함.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>꾹 눌러 삭제 (hold-to-delete)</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>실수 방지가 필요한 파괴적 동작.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>colored overlay를 <span class="m">inset(0 100% 0 0)</span>로 두고 :active에 2s linear로 <span class="m">inset(0 0 0 0)</span>. 놓으면 200ms ease-out로 스냅백 — 비대칭 타이밍의 정석.</span></div>
+            </div>
+            <div class="demo">
+              <div class="stage col">
+                <button class="hold cx-press" id="hold"><span class="fill"></span><span class="txt">🗑 꾹 눌러 삭제</span></button>
+                <span class="tiny">누름: 1.6s linear · 놓음: 200ms ease-out (비대칭)</span>
+              </div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>비교 슬라이더</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>Before/After를 겹쳐 비교할 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>두 이미지를 겹치고 위 이미지를 <span class="m">clip-path: inset(0 50% 0 0)</span>. 드래그 위치로 right inset만 조절 — 추가 DOM 없이 GPU 가속.</span></div>
+            </div>
+            <div class="demo">
+              <div class="compare">
+                <div class="layer after">After · ease-out 180ms</div>
+                <div class="layer before" id="cmpBefore">Before · ease-in 450ms</div>
+                <div class="handle" id="cmpHandle"></div>
+              </div>
+              <input type="range" min="0" max="100" value="50" id="cmpRange" aria-label="비교 슬라이더" />
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>스크롤 진입 이미지 리빌</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>뷰포트에 들어올 때 이미지를 드러낼 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span><span class="m">inset(0 0 100% 0)</span>(아래에서 가림)으로 시작 → 보이면 <span class="m">inset(0 0 0 0)</span>. IntersectionObserver나 Framer Motion <span class="m">useInView({ once:true, margin:'-100px' })</span>.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7 제스처 -->
+      <section id="gesture">
+        <span class="sec-n">07</span>
+        <h2>제스처 &amp; 드래그 인터랙션</h2>
+        <p class="sec-intro">현실의 물체는 갑자기 멈추지 않습니다. 제스처도 그래야 자연스럽습니다.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>모멘텀 기반 닫기</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>스와이프로 닫는 토스트·카드·드로어.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>임계 거리만 보지 말고 속도를 계산: |거리| / 경과시간. 속도가 ~0.11을 넘으면 거리와 무관하게 닫는다. 빠른 플릭 한 번이면 충분.</span></div>
+            </div>
+            <pre>const velocity = Math.abs(swipeAmount) / timeTaken;
+if (Math.abs(swipeAmount) >= THRESHOLD || velocity > 0.11) dismiss();</pre>
+            <div class="demo">
+              <div class="stage col" id="swipeStage">
+                <div class="swipe" id="swipe">
+                  <div class="ic">🔔</div>
+                  <div><div class="t">새 알림</div><div class="s">좌우로 휙 밀어 닫기 (빠르게 튕기면 짧게 밀어도 닫힘)</div></div>
+                </div>
+                <span class="tiny">속도 &gt; 0.11px/ms 또는 120px 이상 → 닫힘</span>
+              </div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>경계에서 댐핑 / 하드 스톱 대신 마찰</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>자연 경계를 넘겨 드래그할 때(이미 맨 위인 드로어를 더 끌 때).</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>많이 끌수록 덜 움직이게 감쇠. 위로 못 끌게 막는 대신 마찰을 키워 허용 — 보이지 않는 벽에 부딪히는 것보다 자연스럽다. 위 카드를 끝까지 밀어보면 저항이 붙습니다.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>포인터 캡처 / 멀티터치 보호</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>드래그가 요소 밖으로 나가거나, 도중에 손가락이 바뀔 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>드래그 시작 시 <span class="m">setPointerCapture</span>로 모든 포인터 이벤트를 잡아 밖으로 나가도 이어지게. 첫 드래그 후 추가 터치는 무시 — 손가락 교체 시 점프 방지.</span></div>
+            </div>
+            <pre>function onPress(e) {
+  if (isDragging) return;       <span class="c">// 멀티터치 무시</span>
+  el.setPointerCapture(e.pointerId);
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8 성능 -->
+      <section id="perf">
+        <span class="sec-n">08</span>
+        <h2>성능 규칙</h2>
+        <p class="sec-intro">부드러움은 GPU 위에서 나옵니다. 잘못된 속성 하나가 프레임을 떨어뜨립니다.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>transform과 opacity만 애니메이션하라</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>60fps가 필요한 모든 곳(사실상 전부).</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>이 둘은 layout·paint를 건너뛰고 GPU에서 돈다. padding·margin·height·width를 애니메이션하면 세 단계 모두 유발.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>CSS 변수는 상속된다 — 자식에 비싸다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>드로어처럼 자식이 많은 컨테이너를 드래그할 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>부모의 CSS 변수를 바꾸면 모든 자식의 스타일이 재계산된다. <span class="m">--swipe-amount</span> 대신 해당 요소의 transform을 직접 갱신.</span></div>
+            </div>
+            <pre><span class="c">// 나쁨: 모든 자식 재계산</span>
+el.style.setProperty('--swipe-amount', d + 'px');
+<span class="c">// 좋음: 이 요소만</span>
+el.style.transform = 'translateY(' + d + 'px)';</pre>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>Framer Motion x/y는 GPU 가속이 아니다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>페이지 로딩 등 메인 스레드가 바쁜 와중에 애니메이션할 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>x/y/scale 단축 속성은 rAF로 메인 스레드에서 돈다. 하드웨어 가속하려면 transform 전체 문자열을 써라. Vercel 대시보드 탭이 로딩 중 프레임을 떨어뜨린 걸 CSS로 바꿔 해결.</span></div>
+            </div>
+            <pre>&lt;motion.div animate={{ transform: "translateX(100px)" }} /&gt; <span class="c">// 가속됨</span></pre>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>정해진 모션은 CSS, 동적 모션은 WAAPI</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>미리 정해진 애니메이션 vs 프로그램적 제어가 필요할 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>CSS 애니메이션은 메인 스레드 밖에서 돌아 로딩 중에도 매끈. 프로그램 제어가 필요하면 Web Animations API — JS 제어 + CSS 성능, 라이브러리 불필요.</span></div>
+            </div>
+            <pre>el.animate(
+  [{ clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0 0)' }],
+  { duration: 1000, fill: 'forwards', easing: 'cubic-bezier(0.77,0,0.175,1)' }
+);</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9 접근성 -->
+      <section id="a11y">
+        <span class="sec-n">09</span>
+        <h2>접근성</h2>
+        <p class="sec-intro">모션은 멀미를 유발할 수 있습니다. 줄이되, 0으로 만들지는 마세요.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>prefers-reduced-motion</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>모든 모션. 사용자가 OS에서 동작 줄이기를 켰을 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>더 적고 부드럽게 — 이동·위치 애니메이션은 제거하되, 이해를 돕는 opacity·색 전환은 유지.</span></div>
+            </div>
+            <pre>@media (prefers-reduced-motion: reduce) {
+  .element { animation: fade .2s ease; <span class="c">/* transform 이동 없음 */</span> }
+}</pre>
+            <div class="demo">
+              <div class="row-center">
+                <span class="rm-badge" id="rmBadge">확인 중…</span>
+                <span class="tiny">OS 설정(손쉬운 사용 → 동작 줄이기)을 바꾸면 즉시 반영됩니다.</span>
+              </div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>터치 기기의 호버 상태</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>호버에 모션을 거는 모든 곳.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>터치 기기는 탭에도 호버가 켜져 오작동한다. <span class="m">(hover: hover) and (pointer: fine)</span> 뒤에 호버 애니메이션을 게이트.</span></div>
+            </div>
+            <pre>@media (hover: hover) and (pointer: fine) {
+  .element:hover { transform: scale(1.05); }
+}</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10 Sonner -->
+      <section id="sonner">
+        <span class="sec-n">10</span>
+        <h2>Sonner 원칙 — 사랑받는 컴포넌트 만들기</h2>
+        <p class="sec-intro">주간 1,300만 다운로드의 Sonner를 만들며 얻은, 어떤 컴포넌트에도 통하는 원칙.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>여섯 가지 원칙</h3></div>
+            <div class="demo">
+              <ol class="principles">
+                <li><b>개발자 경험이 핵심.</b> 훅·컨텍스트·복잡한 설정 없이 한 번 설치, 어디서든 호출. 마찰이 적을수록 많이 쓴다.</li>
+                <li><b>옵션보다 좋은 기본값.</b> 대부분 커스텀하지 않는다. 기본 easing·타이밍·디자인이 훌륭해야 한다.</li>
+                <li><b>이름이 정체성을 만든다.</b> “Sonner”(프랑스어 ‘울리다’)가 “react-toast”보다 우아하다. 때론 검색성보다 기억성.</li>
+                <li><b>엣지 케이스를 보이지 않게.</b> 탭이 숨겨지면 타이머 일시정지, 스택 사이 틈을 의사요소로 메워 호버 유지, 드래그 중 포인터 캡처.</li>
+                <li><b>동적 UI엔 keyframe 아닌 transition.</b> 토스트는 빠르게 추가되고, keyframe은 중단 시 0에서 재시작한다.</li>
+                <li><b>훌륭한 문서 사이트.</b> 직접 만져보고 이해한 뒤 쓰게. 바로 복사할 인터랙티브 예시가 채택 장벽을 낮춘다.</li>
+              </ol>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>응집(cohesion)이 만족감을 만든다</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>컴포넌트의 ‘성격’을 정할 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>Sonner는 일부러 살짝 느리고 ease-out 대신 ease로 더 우아하게 — 모션·디자인·이름이 한 결로 어울린다. 장난스러운 컴포넌트는 더 통통 튀게, 전문적 대시보드는 또렷하고 빠르게. 모션을 무드에 맞춰라.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>비대칭 enter/exit 타이밍</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>사용자가 ‘결정’하는 구간과 시스템이 ‘응답’하는 구간이 나뉠 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>결정이 신중해야 하면 느리게(꾹 눌러 삭제: 2s linear), 응답은 늘 빠르게(200ms ease-out). 위 hold-to-delete 데모가 바로 이 패턴입니다.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>opacity + height 조합 / 다음 날 다시 보기</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>목록에 항목이 들고 날 때 / 애니메이션을 완성했다고 느낄 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>opacity 변화와 height 애니메이션의 궁합은 공식이 없다 — 맞을 때까지 조정. 그리고 다음 날 맑은 눈으로 다시 보면 어제 못 본 흠이 보인다. 슬로모·프레임 단위로 재생해 점검.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11 스태거 -->
+      <section id="stagger">
+        <span class="sec-n">11</span>
+        <h2>스태거 애니메이션</h2>
+        <p class="sec-intro">여럿이 함께 들어올 땐, 약간씩 시차를 두면 한꺼번에 나타나는 것보다 자연스럽습니다.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>짧은 시차로 캐스케이드</h3><span class="demo-badge">실제 예시</span></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>목록·그리드·메뉴가 한 번에 등장할 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>항목마다 30–80ms 시차. 너무 길면 느려 보인다. 스태거는 장식 — 재생 중 인터랙션을 막지 마라.</span></div>
+            </div>
+            <pre>.item:nth-child(2) { animation-delay: 50ms; }
+.item:nth-child(3) { animation-delay: 100ms; }</pre>
+            <div class="demo">
+              <div class="stage" data-anim>
+                <div class="stagger">
+                  <div>받은 편지함</div><div>별표</div><div>보낸 편지함</div><div>임시보관</div><div>스팸</div>
+                </div>
+              </div>
+              <button class="replay">↻ 다시 재생</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12 디버깅 -->
+      <section id="debug">
+        <span class="sec-n">12</span>
+        <h2>애니메이션 디버깅</h2>
+        <p class="sec-intro">전속력에선 안 보이는 흠이 느린 화면에선 드러납니다. 위의 ‘슬로모 4×’ 토글이 바로 이 도구예요.</p>
+        <div class="cases">
+          <div class="case">
+            <div class="case-head"><h3>슬로모 테스트</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>easing·타이밍·origin이 맞는지 의심될 때.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>지속시간을 2–5배로 늘리거나 DevTools 애니메이션 패널로 느리게 재생. 색이 두 상태로 겹쳐 보이는지, easing이 뚝뚝 끊기는지, origin이 엉뚱한 점인지, 여러 속성이 동기화되는지 확인.</span></div>
+            </div>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>프레임 단위 검사 / 실기기 테스트</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl when">언제</span><span>좌표된 속성 간 타이밍 / 터치 제스처 검증.</span></div>
+              <div class="meta-row"><span class="lbl how">어떻게</span><span>Chrome DevTools Animations 패널로 프레임을 한 칸씩. 드로어·스와이프는 반드시 실제 기기에서 — USB로 폰을 연결해 IP로 접속하고 Safari 원격 devtools. 시뮬레이터보다 실물이 정확.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 13 리뷰 -->
+      <section id="checklist">
+        <span class="sec-n">13</span>
+        <h2>리뷰 체크리스트 &amp; 리뷰 포맷</h2>
+        <p class="sec-intro">UI 코드를 리뷰할 땐 Before/After/Why 표 한 개로. 자주 걸리는 항목과 고침입니다.</p>
+        <div class="cases">
+          <div class="case" style="padding-top:18px">
+            <table class="bordered">
+              <thead><tr><th>발견되면</th><th>이렇게 고친다</th></tr></thead>
+              <tbody>
+                <tr><td><span class="m">transition: all</span></td><td>정확한 속성 지정: transform 200ms ease-out</td></tr>
+                <tr><td><span class="m">scale(0)</span> 진입</td><td>scale(0.95) + opacity: 0 에서 시작</td></tr>
+                <tr><td>UI 요소에 <span class="m">ease-in</span></td><td>ease-out 또는 커스텀 커브로</td></tr>
+                <tr><td>팝오버 <span class="m">transform-origin: center</span></td><td>트리거 위치/Radix·Base 변수로 (모달은 예외)</td></tr>
+                <tr><td>키보드 동작에 애니메이션</td><td>애니메이션 완전 제거</td></tr>
+                <tr><td>UI 지속시간 &gt; 300ms</td><td>150–250ms로 축소</td></tr>
+                <tr><td>미디어쿼리 없는 호버 모션</td><td>(hover: hover) and (pointer: fine) 추가</td></tr>
+                <tr><td>빠르게 트리거되는 곳에 keyframe</td><td>CSS transition으로 (가로채기 가능)</td></tr>
+                <tr><td>부하 중 FM x/y 속성</td><td>transform: translateX() 로 하드웨어 가속</td></tr>
+                <tr><td>enter/exit 속도 동일</td><td>exit를 더 빠르게 (예: enter 2s, exit 200ms)</td></tr>
+                <tr><td>전부 동시에 등장</td><td>스태거 30–80ms 시차 추가</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="case">
+            <div class="case-head"><h3>리뷰 포맷은 항상 표로</h3></div>
+            <div class="meta">
+              <div class="meta-row"><span class="lbl how">규칙</span><span>“Before:” / “After:”를 줄로 나누지 말고, 반드시 <b>| Before | After | Why |</b> 마크다운 표 한 개로. Why 칸에 이유를 한 줄로 적습니다.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer>
+      <p>출처: Emil Kowalski의 <span class="m">emil-design-eng</span> 스킬 · 디자인: <b>Airbnb Design System</b> (Rausch #ff385c).</p>
+      <p>모든 데모는 위 <b>슬로모 4×</b> 토글로 느리게 보며 디테일을 점검할 수 있습니다.</p>
+    </footer>
+  </div>
+
+  <div id="tipfloat"></div>
+  <div id="toasts"></div>
+
+<script>
+(function(){
+  var root = document.documentElement, body = document.body;
+  var jsSpeed = 1;
+
+  /* ---- TOC ---- */
+  var tocItems = [
+    ['philosophy','핵심 철학'],['framework','애니메이션 의사결정'],['spring','스프링'],
+    ['components','컴포넌트 원칙'],['transform','Transform'],['clip','clip-path'],
+    ['gesture','제스처'],['perf','성능'],['a11y','접근성'],['sonner','Sonner'],
+    ['stagger','스태거'],['debug','디버깅'],['checklist','리뷰']
+  ];
+  var toc = document.getElementById('toc');
+  tocItems.forEach(function(it){
+    var a = document.createElement('a');
+    a.href = '#'+it[0]; a.textContent = it[1];
+    toc.appendChild(a);
+  });
+
+  /* ---- theme ---- */
+  var themeBtn = document.getElementById('themeBtn');
+  function applyTheme(dark){ body.classList.toggle('dark', dark); themeBtn.textContent = dark ? '☀️' : '🌙'; }
+  try { applyTheme(localStorage.getItem('emil-cases-theme') === 'dark'); } catch(e){}
+  themeBtn.addEventListener('click', function(){
+    var dark = !body.classList.contains('dark');
+    applyTheme(dark);
+    try { localStorage.setItem('emil-cases-theme', dark ? 'dark' : 'light'); } catch(e){}
+  });
+
+  /* ---- slow-mo ---- */
+  var slowmo = document.getElementById('slowmo');
+  slowmo.addEventListener('change', function(){
+    jsSpeed = slowmo.checked ? 4 : 1;
+    root.style.setProperty('--cx-speed', jsSpeed);
+  });
+
+  /* ---- auto-play on scroll-in ---- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('run'); io.unobserve(e.target); } });
+  }, { threshold: 0.35 });
+  document.querySelectorAll('.stage[data-anim]').forEach(function(s){ io.observe(s); });
+
+  /* ---- replay buttons ---- */
+  document.querySelectorAll('.replay').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var stage = btn.parentElement.querySelector('.stage');
+      if(!stage) return;
+      stage.classList.remove('run');
+      void stage.offsetWidth;            /* reflow → restart */
+      stage.classList.add('run');
+    });
+  });
+
+  /* ---- press toggle ---- */
+  var pressToggle = document.getElementById('pressToggle');
+  var pressBtn = document.getElementById('pressBtn');
+  var pressHint = document.getElementById('pressHint');
+  pressToggle.addEventListener('change', function(){
+    pressBtn.classList.toggle('cx-press', pressToggle.checked);
+    pressHint.textContent = pressToggle.checked ? '손이 닿는 느낌' : '죽어있는 느낌';
+  });
+
+  /* ---- origin popovers ---- */
+  document.querySelectorAll('[data-origin]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var pop = document.getElementById('origin-' + btn.getAttribute('data-origin'));
+      pop.classList.toggle('open');
+    });
+  });
+
+  /* ---- flip ---- */
+  var flip = document.getElementById('flip');
+  flip.addEventListener('click', function(){ flip.classList.toggle('flipped'); });
+
+  /* ---- blur swap ---- */
+  var blurBtn = document.getElementById('blurBtn'), blurTxt = document.getElementById('blurTxt');
+  var blurLabels = ['저장','저장 중…','저장됨 ✓'], bi = 0;
+  blurBtn.addEventListener('click', function(){
+    blurTxt.classList.add('swapping');
+    setTimeout(function(){ bi = (bi+1) % blurLabels.length; blurTxt.textContent = blurLabels[bi]; blurTxt.classList.remove('swapping'); }, 200 * jsSpeed);
+  });
+
+  /* ---- hold-to-delete ---- */
+  var hold = document.getElementById('hold'), holdTimer = null, holdDone = false;
+  var holdTxt = hold.querySelector('.txt');
+  function holdStart(){
+    if(holdDone) return;
+    hold.classList.add('holding');
+    holdTimer = setTimeout(function(){
+      hold.classList.remove('holding'); hold.classList.add('done'); holdDone = true;
+      holdTxt.textContent = '삭제됨';
+      pushToast('err','삭제됨','휴지통에서 복구 가능');
+      setTimeout(function(){ hold.classList.remove('done'); holdDone = false; holdTxt.textContent = '🗑 꾹 눌러 삭제'; }, 1800);
+    }, 1600 * jsSpeed);
+  }
+  function holdCancel(){ if(holdTimer) clearTimeout(holdTimer); hold.classList.remove('holding'); }
+  hold.addEventListener('pointerdown', holdStart);
+  hold.addEventListener('pointerup', holdCancel);
+  hold.addEventListener('pointerleave', holdCancel);
+
+  /* ---- compare slider ---- */
+  var cmpRange = document.getElementById('cmpRange'), cmpBefore = document.getElementById('cmpBefore'), cmpHandle = document.getElementById('cmpHandle');
+  function cmp(){ var v = cmpRange.value; cmpBefore.style.setProperty('--clip', (100-v)+'%'); cmpHandle.style.left = v + '%'; }
+  cmpRange.addEventListener('input', cmp); cmp();
+
+  /* ---- swipe dismiss (momentum + damping + pointer capture) ---- */
+  var swipe = document.getElementById('swipe'), swipeStage = document.getElementById('swipeStage');
+  var sStart = null, sActive = false, sdx = 0;
+  function damp(d){ var lim = 160; if(Math.abs(d) <= lim) return d; var over = Math.abs(d)-lim; return Math.sign(d)*(lim + Math.sqrt(over)*6); }
+  function setX(x,op){ swipe.style.transform = 'translateX('+x+'px)'; swipe.style.opacity = op; }
+  swipe.addEventListener('pointerdown', function(e){
+    if(sActive) return; sActive = true; swipe.classList.add('dragging');
+    sStart = { x:e.clientX, t:performance.now() };
+    swipe.setPointerCapture(e.pointerId);
+  });
+  swipe.addEventListener('pointermove', function(e){
+    if(!sActive || !sStart) return;
+    sdx = damp(e.clientX - sStart.x);
+    setX(sdx, 1 - Math.min(Math.abs(sdx)/240, 0.7));
+  });
+  function swipeEnd(){
+    if(!sActive || !sStart) return;
+    var dt = performance.now() - sStart.t, v = Math.abs(sdx)/dt;
+    sActive = false; sStart = null; swipe.classList.remove('dragging');
+    if(Math.abs(sdx) >= 120 || v > 0.11){
+      setX(Math.sign(sdx)*600, 0);
+      setTimeout(function(){
+        swipeStage.innerHTML = '<p class="tiny">닫혔습니다.</p><button class="replay" id="swipeBack">↻ 다시</button>';
+        document.getElementById('swipeBack').addEventListener('click', function(){ location.reload(); });
+      }, 260 * jsSpeed);
+    } else { setX(0, 1); sdx = 0; }
+  }
+  swipe.addEventListener('pointerup', swipeEnd);
+
+  /* ---- reduced motion ---- */
+  var rmBadge = document.getElementById('rmBadge');
+  var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  function rm(){ rmBadge.textContent = mq.matches ? 'reduce 켜짐' : 'no-preference'; rmBadge.classList.toggle('on', mq.matches); }
+  mq.addEventListener('change', rm); rm();
+
+  /* ---- tooltips (skip delay on subsequent) ---- */
+  var tipfloat = document.getElementById('tipfloat');
+  var lastHide = 0, showTimer = null;
+  document.querySelectorAll('.tip-btn').forEach(function(btn){
+    btn.addEventListener('pointerenter', function(){
+      var instant = (performance.now() - lastHide) < 350;
+      clearTimeout(showTimer);
+      var show = function(){
+        var r = btn.getBoundingClientRect();
+        tipfloat.textContent = btn.getAttribute('data-tip');
+        tipfloat.classList.toggle('instant', instant);
+        tipfloat.style.left = (r.left + r.width/2) + 'px';
+        tipfloat.style.top = (r.top - 8) + 'px';
+        tipfloat.style.transform = 'translate(-50%,-100%) scale(1)';
+        tipfloat.classList.add('show');
+      };
+      if(instant) show(); else showTimer = setTimeout(show, 400 * jsSpeed);
+    });
+    btn.addEventListener('pointerleave', function(){
+      clearTimeout(showTimer);
+      tipfloat.classList.remove('show');
+      tipfloat.style.transform = 'translate(-50%,-100%) scale(.96)';
+      lastHide = performance.now();
+    });
+  });
+
+  /* ---- toasts ---- */
+  var toasts = document.getElementById('toasts');
+  function pushToast(kind, title, sub){
+    var t = document.createElement('div');
+    t.className = 'toast' + (kind ? ' ' + kind : '');
+    t.innerHTML = '<div class="tt">'+title+'</div>' + (sub ? '<div class="ts">'+sub+'</div>' : '');
+    toasts.appendChild(t);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ t.classList.add('in'); }); });
+    setTimeout(function(){ t.classList.remove('in'); setTimeout(function(){ t.remove(); }, 320 * jsSpeed); }, 2600);
+  }
+  document.querySelectorAll('[data-toast]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var p = btn.getAttribute('data-toast').split('|');
+      pushToast(p[0], p[1], p[2]);
+    });
+  });
+})();
+</script>
+</body>
+</html>
