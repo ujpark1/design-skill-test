@@ -245,7 +245,40 @@
     .modal, .dd, .toast, .tip { transition-property: opacity; }
     @keyframes fadeOnly { to { opacity: 1; } }
   }
+
+  /* ============ NOTION DESIGN SYSTEM 적용 ============ */
+  :root {
+    --bg:#f7f6f3; --panel:#ffffff; --panel-2:#f1f0ee; --border:#e5e3df;
+    --text:#1a1a1a; --muted:#787774; --accent:#5645d4; --accent-2:#4534b3;
+    --n-shadow-2: rgba(15,15,15,0.08) 0 4px 12px 0;
+    --n-shadow-4: rgba(15,15,15,0.16) 0 16px 48px -8px;
+  }
+  body.dark {
+    --bg:#0c1730; --panel:#15213f; --panel-2:#1a2a52; --border:#2a3a63;
+    --text:#f1f1ef; --muted:#9aa3b8; --accent:#8a6dff; --accent-2:#7b3ff2;
+  }
+  body { font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Pretendard,sans-serif; }
+  h1 { font-weight:600; letter-spacing:-0.02em; }
+  .tag { background:rgba(86,69,212,.10) !important; color:var(--accent) !important; border-color:rgba(86,69,212,.22) !important; }
+  .btn { border-radius:8px !important; font-weight:500; box-shadow:none; }
+  .btn.secondary { box-shadow:var(--n-shadow-2); }
+  .card, .cell { border-radius:12px !important; box-shadow:var(--n-shadow-2); }
+  .cards .card:nth-child(1){ background:#ffe8d4; }
+  .cards .card:nth-child(2){ background:#d9f3e1; }
+  .cards .card:nth-child(3){ background:#e6e0f5; }
+  .cards .card h3{ color:#1a1a1a; }
+  .cards .card p{ color:#5f5d57; }
+  body.dark .cards .card{ background:var(--panel); }
+  body.dark .cards .card h3{ color:var(--text); }
+  body.dark .cards .card p{ color:var(--muted); }
+  .modal, .sheet { box-shadow:var(--n-shadow-4) !important; border-radius:16px !important; }
+  .dd { box-shadow: rgba(15,15,15,0.12) 0 12px 32px -4px !important; }
+  .toast { box-shadow: var(--n-shadow-2) !important; }
+  .tip { background:#1a1a1a !important; color:#fff !important; }
+  body.dark .tip { background:#f4f5f8 !important; color:#14171f !important; }
+
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <button id="themeBtn" class="theme-btn" title="테마 전환">🌙</button>
@@ -458,11 +491,11 @@
   }, { threshold: 0.4 }).observe(document.getElementById('reveal'));
   // ===== 테마 (라이트/다크) =====
   (function(){
-    function apply(t){ document.body.classList.toggle('light', t==='light'); var b=document.getElementById('themeBtn'); if(b) b.textContent = t==='light'?'☀️':'🌙'; }
+    function apply(t){ document.body.classList.toggle('dark', t==='dark'); var b=document.getElementById('themeBtn'); if(b) b.textContent = t==='dark'?'☀️':'🌙'; }
     var p=new URLSearchParams(location.search); if(p.get('theme')) apply(p.get('theme'));
     window.addEventListener('message', function(e){ if(e.data&&e.data.theme) apply(e.data.theme); });
     if(window.self!==window.top){ var bb=document.getElementById('themeBtn'); if(bb) bb.style.display='none'; }
-    var btn=document.getElementById('themeBtn'); if(btn) btn.onclick=function(){ apply(document.body.classList.contains('light')?'dark':'light'); };
+    var btn=document.getElementById('themeBtn'); if(btn) btn.onclick=function(){ apply(document.body.classList.contains('dark')?'light':'dark'); };
   })();
 </script>
 </body>
