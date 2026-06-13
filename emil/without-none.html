@@ -441,10 +441,8 @@
     el.innerHTML = '<div class="t-title">'+title+'</div><div class="t-sub">'+sub+'</div>';
     toaster.appendChild(el);
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-    setTimeout(() => {
-      el.classList.remove('show');
-      el.addEventListener('transitionend', () => el.remove(), { once: true });
-    }, 2600);
+    // 무애니 모드는 transition이 없어 transitionend가 안 옴 → 타임아웃에서 바로 제거
+    setTimeout(() => { el.remove(); }, 2600);
   }
 
   /* ===== 추가 10개 컴포넌트 ===== */
